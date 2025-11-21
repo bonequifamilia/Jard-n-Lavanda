@@ -1,393 +1,153 @@
+<script>
+  // 👉 URL del Apps Script (endpoint a Google Sheets)
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbwBfroJF1r5t1Tddryhx1SlD5gZTQYXyFSJfHV9DG8q2xTr0U98l5iPE2EyEAGbVCusig/exec";
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Pasaporte Digital · Jardín Violeta</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f3ff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-    }
-    .app {
-      background: #ffffff;
-      max-width: 480px;
-      width: 100%;
-      margin: 16px;
-      padding: 20px;
-      border-radius: 18px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    }
-    h1 {
-      text-align: center;
-      color: #6b21a8;
-      margin-bottom: 4px;
-      font-size: 22px;
-    }
-    h2 {
-      color: #7e22ce;
-      font-size: 18px;
-      margin-top: 20px;
-      margin-bottom: 8px;
-    }
-    p.sub {
-      text-align: center;
-      color: #6b7280;
-      font-size: 13px;
-      margin-top: 0;
-      margin-bottom: 16px;
-    }
-    label {
-      font-size: 13px;
-      color: #4b5563;
-      display: block;
-      margin-bottom: 2px;
-    }
-    input, select, textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-      outline: none;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #a855f7;
-      box-shadow: 0 0 0 1px rgba(168,85,247,0.2);
-    }
-    .modulos-lista {
-      max-height: 240px;
-      overflow-y: auto;
-      padding-right: 4px;
-      margin-top: 4px;
-      border-radius: 12px;
-    }
-    .modulo-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      background: #f3f4f6;
-      border-radius: 12px;
-      padding: 8px 10px;
-      margin-bottom: 6px;
-      border: 1px solid #e5e7eb;
-      cursor: pointer;
-    }
-    .modulo-item.checked {
-      background: #ede9fe;
-      border-color: #a855f7;
-    }
-    .modulo-item span.nombre {
-      font-size: 13px;
-      color: #111827;
-      flex: 1;
-    }
-    .modulo-item span.estado {
-      font-size: 11px;
-      color: #6b21a8;
-      white-space: nowrap;
-    }
-    .progress {
-      margin-top: 8px;
-      margin-bottom: 8px;
-    }
-    .progress-bar-container {
-      width: 100%;
-      background: #e5e7eb;
-      border-radius: 999px;
-      overflow: hidden;
-      height: 10px;
-    }
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg,#a855f7,#f97316);
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    .progress-text {
-      font-size: 12px;
-      color: #4b5563;
-      margin-top: 4px;
-      text-align: right;
-    }
-    .badge-logro {
-      background: #f5f3ff;
-      border-left: 4px solid #a855f7;
-      padding: 8px 10px;
-      border-radius: 10px;
-      margin-top: 10px;
-      font-size: 13px;
-      color: #4b5563;
-    }
-    .badge-logro strong {
-      color: #7e22ce;
-    }
-    .boton-primary {
-      margin-top: 12px;
-      width: 100%;
-      border: none;
-      background: #7e22ce;
-      color: #ffffff;
-      font-size: 14px;
-      padding: 10px;
-      border-radius: 12px;
-      cursor: pointer;
-    }
-    .boton-primary:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    .mensaje {
-      font-size: 12px;
-      margin-top: 8px;
-      text-align: center;
-    }
-    .mensaje.error { color: #b91c1c; }
-    .mensaje.ok { color: #166534; }
-    textarea {
-      resize: vertical;
-      min-height: 60px;
-    }
-    small {
-      font-size: 11px;
-      color: #6b7280;
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <h1>Pasaporte Digital · Jardín Violeta</h1>
-    <p class="sub">Marca los módulos que visites. Tu recorrido es confidencial.</p>
+  // 👉 Módulos del pasaporte
+  const MODULOS = [
+    "Tamizaje de violencia",
+    "Salud mental (ansiedad/depresión)",
+    "Salud sexual y reproductiva",
+    "ITS y profilaxis",
+    "Orientación jurídica",
+    "Salud femenina 40+",
+    "Testimonio y acompañamiento en cáncer de mama",
+    "Salud cardiovascular",
+    "Masculinidades positivas",
+    "Vacunación preventiva",
+    "Mastografía"
+  ];
 
-    <!-- DATOS DE IDENTIFICACIÓN -->
-    <section>
-      <label>Ficha (6 dígitos)</label>
-      <input id="ficha" maxlength="6" placeholder="Ejemplo: 123456" />
+  const modulosLista = document.getElementById("modulosLista");
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+  const logro5 = document.getElementById("logro5");
+  const logro10 = document.getElementById("logro10");
+  const btnDescargar = document.getElementById("btnDescargar");
+  const mensajeGlobal = document.getElementById("mensajeGlobal");
+  const mensajeArbol = document.getElementById("mensajeArbol");
 
-      <label>Nombre</label>
-      <input id="nombre" placeholder="Nombre completo" />
+  const visitados = new Set();
 
-      <label>Edad</label>
-      <input id="edad" type="number" min="10" max="100" placeholder="Ejemplo: 42" />
+  // 👉 Render de módulos
+  function renderModulos() {
+    MODULOS.forEach(nombre => {
+      const div = document.createElement("div");
+      div.className = "modulo";
 
-      <label>Sexo</label>
-      <select id="sexo">
-        <option value="">Selecciona una opción</option>
-        <option value="Mujer">Mujer</option>
-        <option value="Hombre">Hombre</option>
-        <option value="No binario">No binario</option>
-        <option value="Prefiero no decirlo">Prefiero no decirlo</option>
-      </select>
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
 
-      <label>Correo electrónico (opcional)</label>
-      <input id="correo" type="email" placeholder="ejemplo@pemex.com" />
-    </section>
+      const spanNombre = document.createElement("span");
+      spanNombre.className = "nombre";
+      spanNombre.textContent = nombre;
 
-    <!-- MÓDULOS -->
-    <section>
-      <h2>Módulos del Jardín Violeta</h2>
-      <div class="modulos-lista" id="modulosLista"></div>
+      const spanEstado = document.createElement("span");
+      spanEstado.className = "estado";
+      spanEstado.textContent = "Pendiente";
 
-      <div class="progress">
-        <div class="progress-bar-container">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
-        <div class="progress-text" id="progressText">0 / 11 módulos visitados</div>
-      </div>
-    </section>
-
-    <!-- LOGRO 5 -->
-    <section id="logro5" style="display:none;">
-      <div class="badge-logro">
-        <strong>Logro desbloqueado: Flor que despierta 🌸</strong><br />
-        Has visitado al menos 5 módulos.  
-        Puedes tomarte una foto en el punto “Momento Violeta” y asociarla a tu ficha.
-      </div>
-    </section>
-
-    <!-- LOGRO 10 -->
-    <section id="logro10" style="display:none; margin-top: 6px;">
-      <div class="badge-logro">
-        <strong>Logro desbloqueado: Árbol que florece 🌳</strong><br />
-        Has visitado 10 módulos o más.  
-        Puedes escribir un mensaje para el Árbol de la Esperanza.
-      </div>
-      <label style="margin-top:6px;">Mensaje para el Árbol de la Esperanza (opcional)</label>
-      <textarea id="mensajeArbol" placeholder="Un deseo, un compromiso, una palabra de aliento..."></textarea>
-      <small>Este mensaje puede imprimirse de forma anónima y colocarse en el Árbol de la Esperanza.</small>
-    </section>
-
-    <button class="boton-primary" id="btnDescargar">
-      Descargar resumen de mi recorrido
-    </button>
-
-    <p id="mensajeGlobal" class="mensaje"></p>
-  </div>
-
-  <script>
-    const MODULOS = [
-      "Tamizaje de violencia",
-      "Salud mental (ansiedad/depresión)",
-      "Salud sexual y reproductiva",
-      "ITS y profilaxis",
-      "Orientación jurídica",
-      "Salud femenina 40+",
-      "Testimonio y acompañamiento en cáncer de mama",
-      "Salud cardiovascular",
-      "Masculinidades positivas",
-      "Vacunación preventiva",
-      "Mastografía"
-    ];
-
-    const modulosLista = document.getElementById("modulosLista");
-    const progressBar = document.getElementById("progressBar");
-    const progressText = document.getElementById("progressText");
-    const logro5 = document.getElementById("logro5");
-    const logro10 = document.getElementById("logro10");
-    const btnDescargar = document.getElementById("btnDescargar");
-    const mensajeGlobal = document.getElementById("mensajeGlobal");
-    const mensajeArbol = document.getElementById("mensajeArbol");
-
-    let visitados = new Set();
-
-    function renderModulos() {
-      MODULOS.forEach((nombre) => {
-        const div = document.createElement("div");
-        div.className = "modulo-item";
-        div.dataset.modulo = nombre;
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.style.marginTop = "3px";
-        checkbox.addEventListener("change", (e) => {
-          e.stopPropagation();
-          toggleModulo(nombre, checkbox, div);
-        });
-
-        const spanNombre = document.createElement("span");
-        spanNombre.className = "nombre";
-        spanNombre.textContent = nombre;
-
-        const spanEstado = document.createElement("span");
-        spanEstado.className = "estado";
-        spanEstado.textContent = "Pendiente";
-
-        div.addEventListener("click", () => {
-          checkbox.checked = !checkbox.checked;
-          toggleModulo(nombre, checkbox, div);
-        });
-
-        div.appendChild(checkbox);
-        div.appendChild(spanNombre);
-        div.appendChild(spanEstado);
-
-        modulosLista.appendChild(div);
+      div.addEventListener("click", () => {
+        checkbox.checked = !checkbox.checked;
+        toggleModulo(nombre, checkbox, div);
       });
+
+      div.appendChild(checkbox);
+      div.appendChild(spanNombre);
+      div.appendChild(spanEstado);
+
+      modulosLista.appendChild(div);
+    });
+  }
+
+  // 👉 Marcar/desmarcar módulos
+  function toggleModulo(nombre, checkbox, div) {
+    if (checkbox.checked) {
+      visitados.add(nombre);
+      div.classList.add("checked");
+      div.querySelector(".estado").textContent = "Visitado ✓";
+    } else {
+      visitados.delete(nombre);
+      div.classList.remove("checked");
+      div.querySelector(".estado").textContent = "Pendiente";
     }
-
-    function toggleModulo(nombre, checkbox, div) {
-      if (checkbox.checked) {
-        visitados.add(nombre);
-        div.classList.add("checked");
-        div.querySelector(".estado").textContent = "Visitado ✓";
-      } else {
-        visitados.delete(nombre);
-        div.classList.remove("checked");
-        div.querySelector(".estado").textContent = "Pendiente";
-      }
-      actualizarProgresoYLogros();
-    }
-
-    function actualizarProgresoYLogros() {
-      const total = MODULOS.length;
-      const count = visitados.size;
-      const porcentaje = (count / total) * 100;
-      progressBar.style.width = porcentaje + "%";
-      progressText.textContent = count + " / " + total + " módulos visitados";
-
-      // Logro 5 módulos
-      if (count >= 5) {
-        logro5.style.display = "block";
-      } else {
-        logro5.style.display = "none";
-      }
-
-      // Logro 10 módulos
-      if (count >= 10) {
-        logro10.style.display = "block";
-      } else {
-        logro10.style.display = "none";
-      }
-    }
-
-    function descargarResumen() {
-      mensajeGlobal.textContent = "";
-      mensajeGlobal.className = "mensaje";
-
-      const ficha = document.getElementById("ficha").value.trim();
-      const nombre = document.getElementById("nombre").value.trim();
-      const edad = document.getElementById("edad").value.trim();
-      const sexo = document.getElementById("sexo").value;
-      const correo = document.getElementById("correo").value.trim();
-
-      if (!ficha || ficha.length !== 6 || !nombre) {
-        mensajeGlobal.textContent = "Por favor llena al menos Ficha (6 dígitos) y Nombre antes de descargar.";
-        mensajeGlobal.classList.add("error");
-        return;
-      }
-
-      const datos = {
-        ficha,
-        nombre,
-        edad,
-        sexo,
-        correo,
-        modulosVisitados: Array.from(visitados),
-        totalModulos: MODULOS.length,
-        mensajeArbol: mensajeArbol ? (mensajeArbol.value.trim() || null) : null,
-        fecha: new Date().toLocaleString()
-      };
-
-      const texto =
-        "PASAPORTE DIGITAL · JARDÍN VIOLETA\n" +
-        "----------------------------------\n" +
-        "Ficha: " + datos.ficha + "\n" +
-        "Nombre: " + datos.nombre + "\n" +
-        "Edad: " + (datos.edad || "No especificada") + "\n" +
-        "Sexo: " + (datos.sexo || "No especificado") + "\n" +
-        "Correo: " + (datos.correo || "No proporcionado") + "\n\n" +
-        "Módulos visitados (" + datos.modulosVisitados.length + "/" + datos.totalModulos + "):\n" +
-        (datos.modulosVisitados.length ? " - " + datos.modulosVisitados.join("\n - ") + "\n\n" : "Sin módulos marcados\n\n") +
-        (datos.mensajeArbol
-          ? "Mensaje para el Árbol de la Esperanza:\n" + datos.mensajeArbol + "\n\n"
-          : "") +
-        "Fecha y hora de generación: " + datos.fecha + "\n";
-
-      const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "Pasaporte_Jardin_Violeta_" + datos.ficha + ".txt";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      mensajeGlobal.textContent = "Resumen descargado. Puedes adjuntarlo a un correo o guardarlo en tu expediente.";
-      mensajeGlobal.classList.add("ok");
-    }
-
-    renderModulos();
     actualizarProgresoYLogros();
-    btnDescargar.addEventListener("click", descargarResumen);
-  </script>
-</body>
-</html>
+  }
+
+  // 👉 Barra y logros
+  function actualizarProgresoYLogros() {
+    const total = MODULOS.length;
+    const count = visitados.size;
+    const porcentaje = (count / total) * 100;
+
+    progressBar.style.width = porcentaje + "%";
+    progressText.textContent = count + " / " + total + " módulos visitados";
+
+    logro5.style.display = count >= 5 ? "block" : "none";
+    logro10.style.display = count >= 10 ? "block" : "none";
+  }
+
+  // 👉 NUEVA función: descarga + envío a Google Sheets
+  function descargarResumen() {
+    mensajeGlobal.textContent = "";
+    mensajeGlobal.className = "mensaje";
+
+    const ficha = document.getElementById("ficha").value.trim();
+    const nombre = document.getElementById("nombre").value.trim();
+    const edad = document.getElementById("edad").value.trim();
+    const sexo = document.getElementById("sexo").value;
+    const correo = document.getElementById("correo").value.trim();
+
+    if (!ficha || ficha.length !== 6 || !nombre) {
+      mensajeGlobal.textContent = "Por favor llena Ficha (6 dígitos) y Nombre.";
+      mensajeGlobal.classList.add("error");
+      return;
+    }
+
+    const datos = {
+      ficha,
+      nombre,
+      edad,
+      sexo,
+      correo,
+      modulosVisitados: Array.from(visitados),
+      totalModulos: MODULOS.length,
+      mensajeArbol: mensajeArbol ? (mensajeArbol.value.trim() || null) : null,
+      fecha: new Date().toLocaleString()
+    };
+
+    // 👉 Enviar datos al Apps Script
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datos)
+    }).catch(err => console.error("Error enviando a Sheet:", err));
+
+    // 👉 Generar TXT para el usuario
+    const texto =
+      "PASAPORTE DIGITAL · JARDÍN VIOLETA\n" +
+      "----------------------------------\n" +
+      "Ficha: " + datos.ficha + "\n" +
+      "Nombre: " + datos.nombre + "\n" +
+      "Edad: " + (datos.edad || "No especificada") + "\n" +
+      "Sexo: " + (datos.sexo || "No especificado") + "\n" +
+      "Correo: " + (datos.correo || "No proporcionado") + "\n\n" +
+      "Módulos visitados (" + datos.modulosVisitados.length + "/" + datos.totalModulos + "):\n" +
+      (datos.modulosVisitados.length ? " - " + datos.modulosVisitados.join("\n - ") + "\n\n" : "Ninguno\n\n") +
+      (datos.mensajeArbol ? "Mensaje al Árbol:\n" + datos.mensajeArbol + "\n\n" : "") +
+      "Fecha: " + datos.fecha + "\n";
+
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Pasaporte_Jardin_Violeta_" + datos.ficha + ".txt";
+    a.click();
+    URL.revokeObjectURL(url);
+
+    mensajeGlobal.textContent = "Registro enviado y resumen descargado. Gracias.";
+    mensajeGlobal.classList.add("ok");
+  }
+
+  renderModulos();
+  actualizarProgresoYLogros();
+  btnDescargar.addEventListener("click", descargarResumen);
+</script>
